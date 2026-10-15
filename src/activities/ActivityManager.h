@@ -12,12 +12,15 @@
 
 #include "GfxRenderer.h"
 #include "MappedInputManager.h"
+#include "mesh/MeshSupport.h"
 #include "util/ScreenshotInfo.h"
 
 class Activity;    // forward declaration
 class RenderLock;  // forward declaration
 
-enum class HomeMenuItem { NONE, FILE_BROWSER, LIBRARY, OPDS_BROWSER, FILE_TRANSFER, SETTINGS_MENU };
+// MESH is offered only in builds with CROSSPOINT_MESH (see mesh/MeshSupport.h).
+// It is last so the other values are the same in every build.
+enum class HomeMenuItem { NONE, FILE_BROWSER, LIBRARY, OPDS_BROWSER, FILE_TRANSFER, SETTINGS_MENU, MESH };
 
 /**
  * ActivityManager
@@ -89,6 +92,18 @@ class ActivityManager {
   void goToLibrary();
   void goToBrowser();
   void goToPlugins(bool showOpds);
+#if CROSSPOINT_MESH
+  // False when the Mesh screen could not be made.
+  bool goToMesh();
+  // The Apps launcher of the Mesh Carousel home.
+  void goToApps();
+  void goToGame2048();
+  void goToSudoku();
+  void goToChess();
+  void goToCheckers();
+  void goToNotes();
+  void goToCalculator();
+#endif
   void goToReader(std::string path, bool allowFastInitialRefresh = false);
   void goToSleep(bool fromTimeout = false);
   void goToBoot();

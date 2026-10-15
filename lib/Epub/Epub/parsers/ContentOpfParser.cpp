@@ -339,6 +339,30 @@ void XMLCALL ContentOpfParser::startElement(void* userData, const XML_Char* name
       serialization::writeString(self->tempItemStore, href);
     }
 
+    // Books without a declared cover often still name it.
+    {
+      const std::string lowerId = lowerAscii(itemId);
+      const auto slash = href.find_last_of('/');
+      const std::string lowerFile = lowerAscii(slash == std::string::npos ? href : href.substr(slash + 1));
+      const bool named = lowerId.find("cover") != std::string::npos || lowerFile.find("cover") != std::string::npos;
+      if (named && startsWithImageMediaType(mediaType) && self->namedCoverImageHref.empty()) {
+        self->namedCoverImageHref = href;
+      } else if (named && mediaType == "application/xhtml+xml" && self->namedCoverPageHref.empty()) {
+        self->namedCoverPageHref = href;
+      }
+      // The first spine pages are nearly always early in the manifest; a cap
+      // keeps a book with thousands of pages from filling the heap.
+      constexpr size_t MAX_XHTML_ITEMS = 64;
+      if (mediaType == "application/xhtml+xml" && self->xhtmlItems.size() < MAX_XHTML_ITEMS) {
+        self->xhtmlItems.emplace_back(itemId, href);
+      }
+      // meta name="cover" that gives the file name instead of the item id.
+      if (self->coverItemHref.empty() && !self->coverItemId.empty() && startsWithImageMediaType(mediaType) &&
+          (lowerFile == lowerAscii(self->coverItemId))) {
+        self->coverItemHref = href;
+      }
+    }
+
     if (itemId == self->coverItemId) {
       // Some EPUBs set meta name="cover" to an XHTML wrapper item.
       // Only treat it as a cover image when the manifest media-type is image/*.
@@ -380,6 +404,19 @@ void XMLCALL ContentOpfParser::startElement(void* userData, const XML_Char* name
       }
     }
     return;
+  }
+
+  // The first pages, for the cover fallback; with or without a cache.
+  if (self->state == IN_SPINE && xmlLocalNameEquals(name, "itemref") && self->firstPageHrefs.size() < FIRST_PAGES) {
+    for (int i = 0; atts[i]; i += 2) {
+      if (strcmp(atts[i], "idref") != 0) continue;
+      for (const auto& item : self->xhtmlItems) {
+        if (item.first == atts[i + 1]) {
+          self->firstPageHrefs.push_back(item.second);
+          break;
+        }
+      }
+    }
   }
 
   // NOTE: This relies on spine appearing after item manifest (which is pretty safe as it's part of the EPUB spec)

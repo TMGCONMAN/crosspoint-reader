@@ -13,14 +13,22 @@
 #include "CrossPointSettings.h"
 #include "HapticFeedback.h"
 #include "OpdsServerStore.h"
+#include "apps/AppsActivity.h"
+#include "apps/CalculatorActivity.h"
+#include "apps/NotesActivity.h"
 #include "boot_sleep/BootActivity.h"
 #include "boot_sleep/SleepActivity.h"
 #include "browser/OpdsBookBrowserActivity.h"
 #include "components/HeaderBackTapTarget.h"
+#include "games/CheckersActivity.h"
+#include "games/ChessActivity.h"
+#include "games/Game2048Activity.h"
+#include "games/SudokuActivity.h"
 #include "home/CrashActivity.h"
 #include "home/FileBrowserActivity.h"
 #include "home/HomeActivity.h"
 #include "library/LibraryListActivity.h"
+#include "mesh/MeshActivity.h"
 #include "network/CrossPointWebServerActivity.h"
 #include "network/UsbDriveActivity.h"
 #include "plugins/PluginCatalogActivity.h"
@@ -300,6 +308,81 @@ void ActivityManager::goToPlugins(bool showOpds) {
   replaceActivity(std::make_unique<PluginCatalogActivity>(renderer, mappedInput, showOpds, /*rootMode=*/true));
 }
 
+#if CROSSPOINT_MESH
+bool ActivityManager::goToMesh() {
+  auto activity = makeUniqueNoThrow<MeshActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: mesh activity");
+    return false;
+  }
+  replaceActivity(std::move(activity));
+  return true;
+}
+
+void ActivityManager::goToGame2048() {
+  auto activity = makeUniqueNoThrow<Game2048Activity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: 2048");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+
+void ActivityManager::goToSudoku() {
+  auto activity = makeUniqueNoThrow<SudokuActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: sudoku");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+
+void ActivityManager::goToChess() {
+  auto activity = makeUniqueNoThrow<ChessActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: chess");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+
+void ActivityManager::goToCheckers() {
+  auto activity = makeUniqueNoThrow<CheckersActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: checkers");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+
+void ActivityManager::goToNotes() {
+  auto activity = makeUniqueNoThrow<NotesActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: notes");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+
+void ActivityManager::goToCalculator() {
+  auto activity = makeUniqueNoThrow<CalculatorActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: calculator");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+
+void ActivityManager::goToApps() {
+  auto activity = makeUniqueNoThrow<AppsActivity>(renderer, mappedInput);
+  if (!activity) {
+    LOG_ERR("ACT", "OOM: apps activity");
+    return;
+  }
+  replaceActivity(std::move(activity));
+}
+#endif
+
 void ActivityManager::goToReader(std::string path, const bool allowFastInitialRefresh) {
   if (path.empty()) {
     goToFileBrowser("/");
@@ -338,7 +421,7 @@ void ActivityManager::goHome(HomeMenuItem initialMenuItem, bool cleanInitialRefr
     const auto& activityName = currentActivity->name;
     if (activityName == "FileBrowser") {
       initialMenuItem = HomeMenuItem::FILE_BROWSER;
-    } else if (activityName == "Library") {
+    } else if (activityName == "Library" || activityName == "Apps") {
       initialMenuItem = HomeMenuItem::LIBRARY;
     } else if (activityName == "OpdsBookBrowser" || activityName == "PluginCatalog") {
       initialMenuItem = HomeMenuItem::OPDS_BROWSER;

@@ -4,6 +4,19 @@
 
 CrossPoint is open-source e-reader firmware - community-built, fully hackable, free forever. It's maintained by a growing community of developers and readers who believe your device should do what you want - not what a manufacturer decided for you.
 
+### This fork: MeshCore companion on the X4 Pro
+
+This fork adds a **Mesh** screen that links an Xteink X4 Pro to a [MeshCore](https://github.com/meshcore-dev/MeshCore)
+companion radio over Bluetooth LE: channel and direct chat, contacts, message history, radio settings and servers, all
+tested on hardware. It also adds the **Mesh Carousel** home screen (a book carousel with a mesh message banner) and an
+**Apps** screen with Notes, a Calculator, Chess, Checkers, Sudoku and 2048. It is built by the `x4pro-mesh` environment
+only. See [docs/mesh.md](docs/mesh.md) for the mesh setup, [docs/apps.md](docs/apps.md) for the apps,
+[CHANGELOG.md](CHANGELOG.md) for what is in each release and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for credits.
+
+**Installing it:** download `crosspoint-<version>-mesh.<n>-x4pro.bin` from this fork's Releases page, then use the web
+installer's "Custom .bin" option or `esptool` as described under [Install firmware](#install-firmware). Flashing the
+official firmware again removes the mesh features; your books, notes and messages on the SD card stay.
+
 ### Now running on:
 - **ESP32C3-based** Xteink X4 and X3.
 - **ESP32S3-based** Xteink X4Pro and X4Classic, Seeed reTerminal Sticky, M5PaperMono
@@ -152,6 +165,8 @@ Conversion runs the firmware repo's `lib/EpdFont/scripts/fontconvert_sdcard.py` 
 ## Documentation
 
 - [User Guide](./USER_GUIDE.md)
+- [Mesh (this fork)](./docs/mesh.md)
+- [Apps (this fork)](./docs/apps.md)
 - [Web server usage](./docs/webserver.md)
 - [Web server endpoints](./docs/webserver-endpoints.md)
 - [Project scope](./SCOPE.md)

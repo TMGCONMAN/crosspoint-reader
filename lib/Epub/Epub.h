@@ -50,6 +50,13 @@ class Epub {
   bool parseContentOpf(BookMetadataCache::BookMetadata& bookMetadata, bool writeSpineEntries = true,
                        bool metadataOnly = false, ZipFile* sharedZip = nullptr);
   bool generateThumbBmpForCover(int height, const std::string& coverImageHref) const;
+  // The first JPG or PNG an XHTML page shows, resolved to a book path; empty if none.
+  std::string findImageInPage(const std::string& pageHref) const;
+  // The page the EPUB 3 navigation's cover landmark points to; empty if none.
+  std::string findCoverLandmark(const std::string& navHref) const;
+  // A picture the user put next to the book with the same name ("Book.jpg"
+  // for "Book.epub"); it replaces the book's own cover. Empty if none.
+  std::string companionCoverImage() const;
   bool openProtection();
   bool parseTocNcxFile() const;
   bool parseTocNavFile() const;

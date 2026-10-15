@@ -1,10 +1,12 @@
 #pragma once
+#include <atomic>
 #include <functional>
 #include <vector>
 
 #include "./FileBrowserActivity.h"
 #include "RecentBooksStore.h"
 #include "activities/Activity.h"
+#include "components/CarouselHomeUi.h"
 #include "components/CoverGridHomeUi.h"
 #include "util/ButtonNavigator.h"
 
@@ -12,6 +14,40 @@ struct Rect;
 
 class HomeActivity final : public Activity {
   std::unique_ptr<CoverGridHomeUi> coverGridUi;
+#if CROSSPOINT_MESH
+  // The Mesh Carousel home; the Mesh banner reads MeshService.
+  std::unique_ptr<CarouselHomeUi> carouselUi;
+  // The book in the middle; kept while the tabs are selected. Written by the
+  // loop, read by the render task.
+  std::atomic<int> carouselCenter{0};
+  // Per book, one bit each: the center-size and side-size thumbnail is on
+  // the card, or could not be made this visit.
+  uint16_t centerThumbReady = 0;
+  uint16_t sideThumbReady = 0;
+  uint16_t centerThumbFailed = 0;
+  uint16_t sideThumbFailed = 0;
+  // Set by the render task once the first covers are in place; the loop
+  // then brings the mesh link up, so BLE does not compete with the first
+  // cover decoding for memory.
+  std::atomic<bool> coversSettled{false};
+  bool meshHeld = false;
+  bool leavingToMesh = false;  // onExit hands the link to the Mesh screen
+  void holdMeshLink();
+  MeshBanner shownBanner;
+  bool bannerPending = false;
+  uint32_t lastMeshRevision = UINT32_MAX;
+  uint8_t lastMeshPhase = UINT8_MAX;
+  uint32_t nextBannerRepaintMs = 0;
+  void syncCarouselCenter();
+  void stepCarousel(int direction);
+  void updateMeshBanner();
+  MeshBanner nextBanner;
+  void buildMeshBanner(MeshBanner& out) const;
+  // Render task: makes missing thumbnails for the books on screen. True when
+  // one was written.
+  bool ensureCarouselThumbs(int center);
+  bool generateThumb(RecentBook& book, int height);
+#endif
   ButtonNavigator buttonNavigator;
   int selectorIndex = 0;
   bool recentsLoading = false;
@@ -47,6 +83,10 @@ class HomeActivity final : public Activity {
     ++i;
     if (item == HomeMenuItem::OPDS_BROWSER) return hasOpdsUrl ? i : 0;
     if (hasOpdsUrl) ++i;
+#if CROSSPOINT_MESH
+    if (item == HomeMenuItem::MESH) return i;
+    ++i;
+#endif
     if (item == HomeMenuItem::FILE_TRANSFER) return i;
     ++i;
     if (item == HomeMenuItem::SETTINGS_MENU) return i;
@@ -59,6 +99,9 @@ class HomeActivity final : public Activity {
     if (idx == i++) return HomeMenuItem::FILE_BROWSER;
     if (idx == i++) return HomeMenuItem::LIBRARY;
     if (hasOpdsUrl && idx == i++) return HomeMenuItem::OPDS_BROWSER;
+#if CROSSPOINT_MESH
+    if (idx == i++) return HomeMenuItem::MESH;
+#endif
     if (idx == i++) return HomeMenuItem::FILE_TRANSFER;
     if (idx == i) return HomeMenuItem::SETTINGS_MENU;
     return HomeMenuItem::NONE;
@@ -77,7 +120,7 @@ class HomeActivity final : public Activity {
   void freeCoverBuffer();     // Free the stored cover buffer
   void loadRecentBooks(int maxBooks);
   void loadRecentCovers(int coverHeight);
-  void fillCoverGridFromLibrary();
+  void fillCoverGridFromLibrary(size_t maxBooks);
   void resolveGridCoverPaths();
   void loadGridCover(RecentBook& book, int height, bool& showingLoading, Rect& popupRect);
 
@@ -92,4 +135,8 @@ class HomeActivity final : public Activity {
   void loop() override;
   void render(RenderLock&&) override;
   bool isHomeActivity() const override { return true; }
+#if CROSSPOINT_MESH
+  // While the banner's link is being set up, as on the Mesh screen.
+  bool preventAutoSleep() override;
+#endif
 };

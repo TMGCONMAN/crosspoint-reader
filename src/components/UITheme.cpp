@@ -17,6 +17,7 @@
 #include "components/themes/lyra/Lyra3CoversTheme.h"
 #include "components/themes/lyra/LyraTheme.h"
 #include "components/themes/roundedraff/RoundedRaffTheme.h"
+#include "mesh/MeshSupport.h"
 
 UITheme UITheme::instance;
 
@@ -34,10 +35,20 @@ bool UITheme::supportsCoverGrid() { return HalMemory::getPsramHeap().totalBytes 
 
 bool UITheme::hasCoverGridHome() { return SETTINGS.uiTheme == CrossPointSettings::COVER_GRID && supportsCoverGrid(); }
 
+bool UITheme::hasCarouselHome() {
+#if CROSSPOINT_MESH
+  return SETTINGS.uiTheme == CrossPointSettings::MESH_CAROUSEL && supportsCoverGrid();
+#else
+  return false;
+#endif
+}
+
 void UITheme::drawCoverGridHome(CoverGridHomeUi& home) { home.renderUi(); }
 
 void UITheme::setTheme(CrossPointSettings::UI_THEME type) {
-  if (type == CrossPointSettings::COVER_GRID && !supportsCoverGrid()) type = CrossPointSettings::LYRA;
+  if ((type == CrossPointSettings::COVER_GRID || type == CrossPointSettings::MESH_CAROUSEL) && !supportsCoverGrid()) {
+    type = CrossPointSettings::LYRA;
+  }
 
   switch (type) {
     case CrossPointSettings::UI_THEME::CLASSIC:
@@ -46,6 +57,7 @@ void UITheme::setTheme(CrossPointSettings::UI_THEME type) {
       currentMetrics = &BaseMetrics::values;
       break;
     case CrossPointSettings::UI_THEME::COVER_GRID:
+    case CrossPointSettings::UI_THEME::MESH_CAROUSEL:
     case CrossPointSettings::UI_THEME::LYRA: {
       // The cover home owns its screen-lifetime UI state; other screens retain Lyra styling.
       auto theme = makeUniqueNoThrow<LyraTheme>();

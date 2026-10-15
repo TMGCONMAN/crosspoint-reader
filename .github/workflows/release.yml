@@ -12,6 +12,8 @@ permissions:
 
 jobs:
   build-release:
+    # This fork's mesh releases are built by release-mesh.yml.
+    if: ${{ !contains(github.event.release.tag_name, '-mesh.') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

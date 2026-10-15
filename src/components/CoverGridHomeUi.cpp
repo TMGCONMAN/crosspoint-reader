@@ -10,12 +10,7 @@
 
 #include "MappedInputManager.h"
 #include "UITheme.h"
-#include "icons/blocks.h"
 #include "icons/book.h"
-#include "icons/folder.h"
-#include "icons/library.h"
-#include "icons/settings2.h"
-#include "icons/transfer.h"
 #include "util/BookProgress.h"
 
 namespace fui = freeink::ui;
@@ -28,7 +23,7 @@ constexpr int COVER_ROW_EXTRA_HEIGHT = 8;
 }  // namespace
 
 CoverGridHomeUi::CoverGridHomeUi(GfxRenderer& renderer)
-    : UiAppHost(renderer), coverCache(renderer), renderer(renderer) {}
+    : UiAppHost(renderer), coverCache(renderer), renderer(renderer), tabBar(renderer) {}
 
 void CoverGridHomeUi::begin(const std::vector<RecentBook>& recent, bool opds, bool continuing) {
   books = &recent;
@@ -266,35 +261,7 @@ void CoverGridHomeUi::drawGrid(UiScreen& screen) {
 }
 
 void CoverGridHomeUi::drawTabs(UiScreen& screen, fui::Rect rect) {
-  static constexpr const uint8_t* ICONS[] = {FolderIcon, LibraryIcon, BlocksIcon, TransferIcon, Settings2Icon};
-  int count = 0;
-  for (int i = 0; i < 5; ++i) {
-    if (i == 2 && !hasOpds) continue;
-    auto& tab = tabItems[count];
-    tab.value = books->size() + count;
-    tab.selected = selected == tab.value;
-    tab.label = nullptr;
-    ++count;
-  }
-  tabs.tabs = tabItems.data();
-  tabs.count = count;
-  tabs.layout = fui::TabBarLayout::SpaceBetween;
-  tabs.action = SELECT;
-  tabs.inputMask = fui::InputTouch;
-  tabs.iconSize = 32;
-  tabs.iconPainterUserData = this;
-  tabs.iconPainter = [](fui::DrawTarget&, fui::Rect iconRect, const fui::TabItem& tab, uint8_t, void* user) {
-    const auto& self = *static_cast<CoverGridHomeUi*>(user);
-    const int index = tab.value - static_cast<int>(self.books->size());
-    const int icon = !self.hasOpds && index >= 2 ? index + 1 : index;
-    self.renderer.drawIcon(ICONS[icon], iconRect.x, iconRect.y, iconRect.width);
-    return true;
-  };
-  tabs.tabStyles.normal.background = fui::Paint::solid(fui::Color::White);
-  tabs.tabStyles.selected.background = fui::Paint::solid(fui::Color::White);
-  tabs.selectedUnderline = 2;
-  tabs.distributedSlotWidth = 0;
-  fui::tabBar(screen.frame(), rect, tabs);
+  tabBar.draw(screen, rect, static_cast<int>(books->size()), selected, hasOpds, SELECT);
 }
 
 bool CoverGridHomeUi::paintFramedCover(fui::DrawTarget& target, fui::Rect rect, size_t index) {
@@ -304,6 +271,8 @@ bool CoverGridHomeUi::paintFramedCover(fui::DrawTarget& target, fui::Rect rect, 
   target.fill(fui::Rect{static_cast<int16_t>(rect.x + SHADOW_OFFSET), rect.bottom(), rect.width, SHADOW_OFFSET}, ink);
   // The false spine draws inside the cover paint (HomeCoverCache), glued to
   // the art's left edge, so it stays aligned whatever each cover's margin is.
-  const bool drawn = index < coverPaths.size() && coverCache.paint(rect, index, coverPaths[index]);
+  const bool drawn =
+      index < coverPaths.size() &&
+      coverCache.paint(rect, index, coverPaths[index], index < books->size() ? (*books)[index].title.c_str() : nullptr);
   return drawn;
 }

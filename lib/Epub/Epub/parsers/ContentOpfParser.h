@@ -66,6 +66,9 @@ class ContentOpfParser final : public Print {
     uint32_t fileOffset;  // offset in .items.bin
   };
   std::deque<ItemIndexEntry> itemIndex;
+  // XHTML items by id, for firstPageHrefs; only the first few spine entries
+  // are looked up.
+  std::vector<std::pair<std::string, std::string>> xhtmlItems;
   bool useItemIndex = false;
 
   // FNV-1a hash function
@@ -94,6 +97,13 @@ class ContentOpfParser final : public Print {
   std::string tocNavPath;  // EPUB 3 nav document path
   std::string coverItemHref;
   std::string guideCoverPageHref;  // Guide reference with type="cover" or "cover-page" (points to XHTML wrapper)
+  // Fallbacks for books that declare no cover: the first manifest image, and
+  // the first XHTML page, whose id or file name says "cover".
+  std::string namedCoverImageHref;
+  std::string namedCoverPageHref;
+  // The first spine pages, where most books put the cover even unmarked.
+  static constexpr size_t FIRST_PAGES = 2;
+  std::vector<std::string> firstPageHrefs;
   std::string textReferenceHref;
   std::vector<std::string> cssFiles;  // CSS stylesheet paths
 

@@ -5,11 +5,12 @@
 #include <vector>
 
 #include "HomeCoverCache.h"
+#include "HomeTabBar.h"
 #include "RecentBooksStore.h"
 #include "UiAppHost.h"
-#include "components/bars/tab-bar.h"
 #include "components/media/book-card.h"
 #include "components/media/cover-grid.h"
+#include "mesh/MeshSupport.h"
 
 class CoverGridHomeUi final : public UiAppHost {
  public:
@@ -59,6 +60,5 @@ class CoverGridHomeUi final : public UiAppHost {
   freeink::ui::BookCardProps card;
   freeink::ui::CoverGridProps grid;
   freeink::ui::Rect gridBounds{};
-  freeink::ui::TabBarProps tabs;
-  std::array<freeink::ui::TabItem, 5> tabItems;
+  HomeTabBar tabBar;
 };

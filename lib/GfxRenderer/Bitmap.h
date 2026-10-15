@@ -76,6 +76,8 @@ class Bitmap {
   bool isTopDown() const { return topDown; }
   bool hasGreyscale() const { return bpp > 1; }
   int getRowBytes() const { return rowBytes; }
+  // Where the pixel rows start in the file.
+  uint32_t getDataOffset() const { return bfOffBits; }
   bool is1Bit() const { return bpp == 1; }
   uint16_t getBpp() const { return bpp; }
 

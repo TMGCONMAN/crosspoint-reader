@@ -1,0 +1,74 @@
+name: Compile Mesh Release
+
+# This fork's releases: tag <version>-mesh.<mesh_release> from platformio.ini
+# (for example 1.6.5-mesh.1, without a leading "v": the device's updater
+# looks for crosspoint-<tag>-x4pro.bin). Builds the X4 Pro mesh firmware and
+# attaches it, with its SHA-256, to the release.
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-mesh-release:
+    if: contains(github.event.release.tag_name, '-mesh.')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          submodules: recursive
+
+      - name: Validate release version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version="$(sed -n 's/^version = //p' platformio.ini | head -n1)"
+          mesh_release="$(sed -n 's/^mesh_release = //p' platformio.ini | head -n1)"
+          expected="${version}-mesh.${mesh_release}"
+          if [ "$RELEASE_TAG" != "$expected" ]; then
+            echo "Tag $RELEASE_TAG does not match platformio.ini ($expected)"
+            exit 1
+          fi
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+          enable-cache: false
+
+      - name: Install PlatformIO Core
+        run: |
+          uv pip install --system -U https://github.com/pioarduino/platformio-core/archive/refs/tags/v6.1.19.zip
+          uv pip install --system -U "littlefs-python>=0.16.0" "fatfs-ng>=0.1.14" "pyyaml>=6.0.2" \
+            "rich-click>=1.8.6" "zopfli>=0.2.2" "intelhex>=2.3.0" "rich>=14.0.0" "urllib3<2" \
+            "cryptography>=45.0.3" "certifi>=2025.8.3" "ecdsa>=0.19.1" "bitstring>=4.3.1" \
+            "reedsolo>=1.5.3,<1.8" "esp-idf-size>=2.0.0" "esp-coredump>=1.14.0"
+
+      - name: Pin pioarduino core inside the platform penv
+        run: |
+          set -euo pipefail
+          pio pkg install -e x4pro-mesh-gh_release
+          uv pip install --python ~/.platformio/penv/bin/python "pioarduino==6.1.19"
+
+      # GITHUB_REPOSITORY (owner/name of this fork) becomes the update source.
+      - name: Build the mesh firmware
+        run: pio run -e x4pro-mesh-gh_release -j1
+
+      - name: Attach firmware and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          asset="crosspoint-${RELEASE_TAG}-x4pro.bin"
+          cp .pio/build/x4pro-mesh-gh_release/firmware.bin "$asset"
+          sha256sum "$asset" > "$asset.sha256"
+          gh release upload "$RELEASE_TAG" "$asset" "$asset.sha256" --repo "$GITHUB_REPOSITORY" --clobber

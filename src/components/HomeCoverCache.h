@@ -19,7 +19,8 @@ class HomeCoverCache {
   void prepare();
   void invalidate();
   void invalidate(size_t index);
-  bool paint(freeink::ui::Rect rect, size_t index, const std::string& path);
+  // title is printed on the placeholder drawn when there is no cover.
+  bool paint(freeink::ui::Rect rect, size_t index, const std::string& path, const char* title = nullptr);
 
  private:
   struct CachedCover {

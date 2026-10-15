@@ -19,6 +19,7 @@
 #include "ReaderFontSizes.h"
 #include "activities/settings/SettingsActivity.h"
 #include "components/UITheme.h"
+#include "mesh/MeshSupport.h"
 #include "util/DictionaryRegistry.h"
 
 // Build the font family setting dynamically. When registry is non-null, SD card fonts
@@ -248,9 +249,16 @@ inline SettingInfo buildShortPowerButtonSetting() {
 }
 
 inline std::vector<StrId> homeThemeValues() {
-  static constexpr StrId VALUES[] = {StrId::STR_THEME_CLASSIC, StrId::STR_THEME_LYRA, StrId::STR_THEME_LYRA_EXTENDED,
-                                     StrId::STR_THEME_ROUNDEDRAFF, StrId::STR_THEME_COVER_GRID};
-  const size_t count = UITheme::supportsCoverGrid() ? std::size(VALUES) : std::size(VALUES) - 1;
+  static constexpr StrId VALUES[] = {
+      StrId::STR_THEME_CLASSIC,       StrId::STR_THEME_LYRA,       StrId::STR_THEME_LYRA_EXTENDED,
+      StrId::STR_THEME_ROUNDEDRAFF,   StrId::STR_THEME_COVER_GRID,
+#if CROSSPOINT_MESH
+      StrId::STR_THEME_MESH_CAROUSEL,
+#endif
+  };
+  // The cover homes come last and need PSRAM.
+  constexpr size_t COVER_HOMES = 1 + CROSSPOINT_MESH;
+  const size_t count = UITheme::supportsCoverGrid() ? std::size(VALUES) : std::size(VALUES) - COVER_HOMES;
   return {VALUES, VALUES + count};
 }
 

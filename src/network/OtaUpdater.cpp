@@ -12,18 +12,41 @@
 // clang-format on
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 
 #include "FirmwareBoardTag.h"
 #include "FirmwareFlasher.h"
 
+// The GitHub repository ("owner/name") whose latest release is offered as an
+// update. A mesh build is a fork: unless its build names the fork's own
+// repository, it offers no updates, so it is never replaced by an official
+// release without the mesh features.
+#ifndef CROSSPOINT_OTA_REPO
+#if defined(CROSSPOINT_MESH) && CROSSPOINT_MESH
+#define CROSSPOINT_OTA_REPO ""
+#else
+#define CROSSPOINT_OTA_REPO "crosspoint-reader/crosspoint-reader"
+#endif
+#endif
+
 namespace {
-constexpr char latestReleaseUrl[] = "https://api.github.com/repos/crosspoint-reader/crosspoint-reader/releases/latest";
+// Fork releases count after the base version: "1.6.5-mesh.2" is release 2.
+int forkRelease(const char* version) {
+  const char* mark = strstr(version, "-mesh.");
+  return mark ? atoi(mark + 6) : 0;
+}
 }  // namespace
 
 OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
   LOG_DBG("OTA", "Checking for update (current: %s)", CROSSPOINT_VERSION);
+  if (CROSSPOINT_OTA_REPO[0] == '\0') {
+    LOG_INF("OTA", "This build names no release repository; no updates");
+    return NO_UPDATE;
+  }
+  const std::string latestReleaseUrl =
+      std::string("https://api.github.com/repos/") + CROSSPOINT_OTA_REPO + "/releases/latest";
 
   // Stream the ~32KB release JSON straight into the parser as it arrives.
   // Buffering the whole body in a std::string would add a growing allocation
@@ -123,6 +146,11 @@ bool OtaUpdater::isUpdateNewer() const {
    * Check patch versions.
    */
   if (latestPatch != currentPatch) return latestPatch > currentPatch;
+
+  // A later fork release of the same base version.
+  const int latestFork = forkRelease(latestVersion.c_str());
+  const int currentFork = forkRelease(currentVersion);
+  if (latestFork != currentFork) return latestFork > currentFork;
 
   // If we reach here, it means all segments are equal.
   // One final check, if we're on an RC build (contains "-rc"), we should consider the latest version as newer even if

@@ -1,11 +1,13 @@
 #pragma once
 #include <FreeInkUIGfxRenderer.h>
 #include <GfxRenderer.h>
+#include <TextWrap.h>
 
 #include <atomic>
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "activities/Activity.h"
 #include "util/ButtonNavigator.h"
@@ -26,6 +28,16 @@ class KeyboardEntryActivity : public Activity {
         text(std::move(initialText)),
         maxLength(maxLength),
         inputType(inputType) {}
+
+  // Long text such as notes: Enter starts a new line, words wrap and the
+  // field scrolls to keep the cursor in view; Done (on screen, or holding
+  // Enter) and Back both finish with the text. With continueLists, Enter on
+  // a checklist ("[ ] ") or bullet ("- ") line starts the next one, and Enter
+  // on an empty one ends the list. Call before the activity starts.
+  void setMultiline(bool continueLists) {
+    multiline = true;
+    listContinuation = continueLists;
+  }
 
   void onEnter() override;
   void onExit() override;
@@ -99,6 +111,25 @@ class KeyboardEntryActivity : public Activity {
   // atomic (not volatile) so the flag also orders the first table publication
   // on dual-core targets.
   std::atomic<bool> interactionsReady{false};
+
+  bool multiline = false;
+  bool listContinuation = false;
+  int scrollLine = 0;  // first field line shown (multiline)
+  using FieldLine = textwrap::Line;
+  struct FieldBox {
+    int left;
+    int top;
+    int width;
+    int lines;
+    int lineHeight;
+  };
+  FieldBox multilineBox() const;
+  freeink::ui::Rect doneButtonRect() const;
+  void multilineLines(std::vector<FieldLine>& out, int width) const;
+  int measureText(int start, int end) const;
+  void renderMultilineField();
+  bool multilinePositionFromPoint(int x, int y, size_t& position) const;
+  void insertNewline();
 
   int delPressCount = 0;
   bool hintVisible = false;

@@ -37,6 +37,7 @@
 #include "activities/settings/SdFirmwareUpdateActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
+#include "mesh/MeshService.h"
 #include "platform/UsbSerialJtagHandoff.h"
 #include "util/ButtonNavigator.h"
 #include "util/PluginEvents.h"
@@ -358,6 +359,12 @@ void enterDeepSleep(bool fromTimeout = false) {
   // a WiFi activity would otherwise silentRestart() here and reboot instead.
   deepSleepInProgress = true;
   activityManager.goToSleep(fromTimeout);
+
+#if CROSSPOINT_MESH
+  // Leaving the screen that held the link began, or scheduled, the BLE
+  // teardown; finish it before sleep.
+  MESH_SERVICE.shutdownForSleep();
+#endif
 
   if (isQuickResumeSleep) {
     saveSleepFrameBuffer();
@@ -884,6 +891,11 @@ void loop() {
   if (gpio.wasUsbStateChanged() && !activityManager.isReaderActivity()) {
     activityManager.requestUpdate();
   }
+
+#if CROSSPOINT_MESH
+  // Before the activity, so the Mesh screen sees this pass's link state.
+  MESH_SERVICE.poll();
+#endif
 
   const unsigned long activityStartTime = millis();
   activityManager.loop();

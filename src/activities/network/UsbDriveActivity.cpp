@@ -7,6 +7,7 @@
 #include "MappedInputManager.h"
 #include "SilentRestart.h"
 #include "components/UITheme.h"
+#include "mesh/MeshService.h"
 
 namespace fui = freeink::ui;
 
@@ -17,6 +18,11 @@ void UsbDriveActivity::onEnter() {
 
   // Show the safety instructions before giving the raw SD card to the USB host.
   requestUpdateAndWait();
+#if CROSSPOINT_MESH
+  // The mesh history is on the card; a link left up from the last screen
+  // must not write to it once the host has it.
+  MESH_SERVICE.stopIfReleased();
+#endif
   if (!Storage.beginUsbDrive()) {
     LOG_ERR("USB", "Unable to start USB Drive");
     preparing = false;
