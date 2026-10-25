@@ -17,6 +17,11 @@ only. See [docs/mesh.md](docs/mesh.md) for the mesh setup, [docs/apps.md](docs/a
 installer's "Custom .bin" option or `esptool` as described under [Install firmware](#install-firmware). Flashing the
 official firmware again removes the mesh features; your books, notes and messages on the SD card stay.
 
+### Development log
+
+- [The E-Reader That Texts Off-Grid](docs/articles/2026-10-15-public-release.md): the public 1.6.5-mesh.1 release for the X4 Pro, how it works and how to install it.
+- [MeshPoint: How an Off-Grid E-Reader Grew Up in Nine Days](docs/articles/2026-10-24-nine-days.md) (in development): the Game Boy emulator, offline Wikipedia, Survival Guide, MeshCore tools, the Mesh Dashboard, chat bubbles and support for more devices.
+
 ### Now running on:
 - **ESP32C3-based** Xteink X4 and X3.
 - **ESP32S3-based** Xteink X4Pro and X4Classic, Seeed reTerminal Sticky, M5PaperMono
@@ -167,6 +172,7 @@ Conversion runs the firmware repo's `lib/EpdFont/scripts/fontconvert_sdcard.py` 
 - [User Guide](./USER_GUIDE.md)
 - [Mesh (this fork)](./docs/mesh.md)
 - [Apps (this fork)](./docs/apps.md)
+- [Development log articles (this fork)](./docs/articles/)
 - [Web server usage](./docs/webserver.md)
 - [Web server endpoints](./docs/webserver-endpoints.md)
 - [Project scope](./SCOPE.md)
